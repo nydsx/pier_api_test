@@ -1,0 +1,7 @@
+name: GetReqTestSuite
+tests:
+  - name: GetReqTest
+    parameters: { workBook: /home/pier/workspace/pier_api_test/src/test/resources/Http_Request_workbook_Data.xlsx }
+    classes:
+      - com.pier.test.api_test.GetReqTest
+

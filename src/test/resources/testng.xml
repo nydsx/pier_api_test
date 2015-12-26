@@ -1,0 +1,14 @@
+<!DOCTYPE suite SYSTEM "http://testng.org/testng-1.0.dtd" >
+  
+<suite name="GetReqTestSuite" parallel="false" verbose="1" >
+  
+ 
+  <test name="GetReqTest">
+     <parameter name="workBook" value="/home/pier/workspace/pier_api_test/src/test/resources/Http_Request_workbook_Data.xlsx" />
+    <classes>
+      <class name="com.pier.test.api_test.GetReqTest"/>
+    </classes>
+  </test>
+  
+  
+  </suite>

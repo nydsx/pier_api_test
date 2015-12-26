@@ -1,0 +1,5 @@
+.settings/*
+*.jar
+*.class
+target/
+test-output
