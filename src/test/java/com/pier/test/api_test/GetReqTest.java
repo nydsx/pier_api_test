@@ -19,6 +19,7 @@ import java.util.regex.Pattern;
 import org.apache.commons.io.IOUtils;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,14 +32,12 @@ import org.testng.annotations.DataProvider;
 import org.testng.annotations.Parameters;
 import org.testng.annotations.Test;
 
-import com.google.inject.spi.Message;
 import com.jayway.restassured.response.Response;
 
 public class GetReqTest implements ITest {
 	protected static final Logger logger = LoggerFactory.getLogger(GetReqTest.class);
     private Response response;
     private DataReader myInputData;
-    private DataReader myBaselineData;
     private String template;
 
     public String getTestName() {
@@ -49,7 +48,7 @@ public class GetReqTest implements ITest {
   
     XSSFWorkbook wb = null;
     XSSFSheet inputSheet = null;
-    XSSFSheet baselineSheet = null;
+    //XSSFSheet baselineSheet = null;
  
     @BeforeTest
     @Parameters("workBook")
@@ -64,7 +63,7 @@ public class GetReqTest implements ITest {
             e.printStackTrace();
         }
         inputSheet = wb.getSheet("Input");
-        baselineSheet = wb.getSheet("Baseline");
+        //baselineSheet = wb.getSheet("Baseline");
 
         try {    	   
             InputStream is = GetReqTest.class.getClassLoader().getResourceAsStream("request_template.txt");
@@ -97,7 +96,7 @@ public class GetReqTest implements ITest {
                     test_IDs.add(new Object[] { test_ID, test_case });
                 }
             }
-            myBaselineData = new DataReader(baselineSheet, true, true, 0);
+            //myBaselineData = new DataReader(baselineSheet, true, true, 0);
         return test_IDs.iterator();
     }
 
@@ -106,61 +105,38 @@ public class GetReqTest implements ITest {
 
         GetReq myReq = new GetReq();
         int code = 0;
-        String message = "";
         try {
             myReq.generate_request(template, myInputData.get_record(ID));
             response = myReq.perform_request();
-            logger.info("ResponseBody:"+response.asString());
-            logger.info("statusLine:"+response.getStatusLine());
+            logger.info("ResponseBody:"+response.asString()+"\n"+"statusLine:"+response.getStatusLine());
+            
             JSONObject dataJson = new JSONObject(response.getBody().asString());
        	 	code = dataJson.getInt("code");
+       	 	
         } catch (Exception e) {
-           Assert.fail("Problem using HTTPRequestGenerator to generate response: " + e.getMessage());
-        }
-        String pattern = myBaselineData.get_record(ID).get("Pattern");
+        		e.printStackTrace();
+          }
+        	String pattern = myInputData.get_record(ID).get("Pattern");
+        	System.out.println(pattern);
+        //String pattern = myBaselineData.get_record(ID).get("Pattern");
         if (code == 200){
-        	System.out.println(pattern+"-------------------");
-        	Pattern r = Pattern.compile(pattern);
-        	if(r.matcher(response.asString()).find()){
-        		logger.info("API正常返回数据！");
-				logger.info(ID+"\t\t" + test_case );
-        	}else {
-				logger.info("数据丢失！");
-				logger.info(ID+"\t\t" + test_case );
-			}
+        		Pattern r = Pattern.compile(pattern);
+        		if(r.matcher(response.asString()).find()){
+        			logger.info("API正常返回数据！"+"\n"+ID+"\t\t" + test_case);
+        		}else {
+        			logger.info("请求未正常返回数据！"+"\n"+ID+"\t\t" + test_case);
+        			Assert.fail();
+        		}
         }else{
-        	switch (code) {
-        	case 404:
-				logger.info("数据未找到！");
-		        logger.info(ID+"\t\t" + test_case );
-				break;
-        	case 400:
-				logger.info("请求参数丢失！");
-		        logger.info(ID+"\t\t" + test_case );
-				break;
-			case 1112:
-				logger.info("授权码错误！");
-		        logger.info(ID+"\t\t" + test_case );
-				break;
-			case 1065:
-				logger.info("该邮箱被注册！");
-		        logger.info(ID+"\t\t" + test_case );
-				break;
-			case 1001:
-				logger.info("会话过期请重新登录！");
-		        logger.info(ID+"\t\t" + test_case );
-				break;
-			case 1145:
-				logger.info("验证码无效！");
-		        logger.info(ID+"\t\t" + test_case );
-				break;
-			default:
-				break;
-			}
+        		try {
+					logger.info((new JSONObject(response.getBody().asString())).getString("message")+"\n"+ID+"\t\t" + test_case );
+					Assert.fail();
+				} catch (JSONException e) {
+					e.printStackTrace();
+				}
         }
        
     }
-
 
     @AfterTest
     public void teardown() {
