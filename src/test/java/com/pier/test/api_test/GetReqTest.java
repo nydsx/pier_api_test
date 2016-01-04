@@ -17,12 +17,11 @@ import java.util.TreeMap;
 import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
+import org.apache.log4j.Logger;
 import org.apache.poi.xssf.usermodel.XSSFSheet;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.json.JSONException;
 import org.json.JSONObject;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.testng.Assert;
 import org.testng.ITest;
 import org.testng.ITestContext;
@@ -35,7 +34,8 @@ import org.testng.annotations.Test;
 import com.jayway.restassured.response.Response;
 
 public class GetReqTest implements ITest {
-	protected static final Logger logger = LoggerFactory.getLogger(GetReqTest.class);
+	//protected static final Logger logger = LoggerFactory.getLogger(GetReqTest.class);
+	private static Logger logger = Logger.getLogger(GetReqTest.class);
     private Response response;
     private DataReader myInputData;
     private String template;
@@ -48,7 +48,6 @@ public class GetReqTest implements ITest {
   
     XSSFWorkbook wb = null;
     XSSFSheet inputSheet = null;
-    //XSSFSheet baselineSheet = null;
  
     @BeforeTest
     @Parameters("workBook")
@@ -63,7 +62,6 @@ public class GetReqTest implements ITest {
             e.printStackTrace();
         }
         inputSheet = wb.getSheet("Input");
-        //baselineSheet = wb.getSheet("Baseline");
 
         try {    	   
             InputStream is = GetReqTest.class.getClassLoader().getResourceAsStream("request_template.txt");
@@ -117,8 +115,7 @@ public class GetReqTest implements ITest {
         		e.printStackTrace();
           }
         	String pattern = myInputData.get_record(ID).get("Pattern");
-        	System.out.println(pattern);
-        //String pattern = myBaselineData.get_record(ID).get("Pattern");
+        //	logger.info(pattern);
         if (code == 200){
         		Pattern r = Pattern.compile(pattern);
         		if(r.matcher(response.asString()).find()){

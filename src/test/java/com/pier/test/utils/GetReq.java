@@ -9,8 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.io.IOUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.apache.log4j.Logger;
 
 import com.jayway.restassured.response.Response;
 import com.jayway.restassured.specification.RequestSpecification;
@@ -26,8 +25,8 @@ public class GetReq {
 		GET,POST
 	}
   
-  protected static final Logger logger = LoggerFactory.getLogger(GetReq.class);
-
+ // protected static final Logger logger = LoggerFactory.getLogger(GetReq.class);
+  private static Logger logger = Logger.getLogger(GetReq.class);
   private RequestSpecification reqSpec;
 
   private String call_host = "";
@@ -201,6 +200,7 @@ public class GetReq {
         case "POST": {
           response = reqSpec.body(body).post(call_string);
           logger.info("POST URL:"+call_string+"   RequestBody:"+body);
+          
           break;
         }
         default: {
