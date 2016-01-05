@@ -133,7 +133,6 @@ public class RecordHandler {
     } else if(myType.equals(RecordType.INDEXED_LIST) && this.indexed_value_list.contains(value)) {
       result = true;
     }
-
     return result;
   }
 
@@ -151,7 +150,6 @@ public class RecordHandler {
       this.indexed_value_list.remove(value);
       result = true;
     }
-
     return result;
   }
 
@@ -162,7 +160,6 @@ public class RecordHandler {
       this.indexed_value_list.remove(index);
       result = true;
     }
-
     return result;
   }
 
