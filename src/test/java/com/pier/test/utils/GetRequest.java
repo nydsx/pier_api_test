@@ -23,14 +23,13 @@ import com.jayway.restassured.specification.RequestSpecification;
  */
 public class GetRequest {
 
-	private static Logger logger = Logger.getLogger(GetRequest.class);
-
+	private static Logger LOG = Logger.getLogger(GetRequest.class);
 	private RequestSpecification reqSpec;
 	private String signinBody = ReadProperties.getBody();
 	private String signinUrl = ReadProperties.getUrl();
 	private String call_host = ReadProperties.getURL();
 	private String call_suffix = "";
-	private String call_string = "";
+	private String call_url = "";
 	private String call_type = "";
 	private String body = "";
 	private Map<String, String> headers = new HashMap<String, String>();
@@ -41,7 +40,7 @@ public class GetRequest {
 	}
 
 	public String getCallString() {
-		return call_string;
+		return call_url;
 	}
 	/**
 	 * Constructor. Initializes the RequestSpecification (relaxedHTTPSValidation
@@ -75,7 +74,7 @@ public class GetRequest {
 						found_replacement = true;
 						item = item.substring(2, item.length() - 2);
 						if (!record.containsKey(item)) {
-							logger.info(
+							LOG.info(
 									"Template contained replacement string whose value did not exist in input record:["
 											+ item + "]");
 						}
@@ -86,7 +85,7 @@ public class GetRequest {
 				tokens = tokenize_template(filled_template);
 			}
 		} catch (Exception e) {
-			logger.error("Problem performing replacements from template: ", e);
+			LOG.error("Problem performing replacements from template: ", e);
 		}
 		try {
 			InputStream stream = IOUtils.toInputStream(filled_template, "UTF-8");
@@ -99,15 +98,13 @@ public class GetRequest {
 
 			call_type = line_tokens[0];
 			call_suffix = line_tokens[1];
-			call_string = call_host + call_suffix;
+			call_url = call_host + call_suffix;
 			
 			line = in.readLine();
-
 			while (line != null && !line.equals("")) {
 				String lineP1 = line.substring(0, line.indexOf(":")).trim();
 				String lineP2 = line.substring(line.indexOf(" "), line.length()).trim();
 				headers.put(lineP1, lineP2);
-
 				line = in.readLine();
 			}
 
@@ -118,9 +115,8 @@ public class GetRequest {
 				}
 			}
 		} catch (Exception e) {
-			logger.error("Problem setting request values from template: ", e);
+			LOG.error("Problem setting request values from template: ", e);
 		}
-
 		return this;
 	}
 
@@ -137,27 +133,27 @@ public class GetRequest {
 			for (Map.Entry<String, String> entry : cookie_list.entrySet()) {
 				reqSpec.cookie(entry.getKey(), entry.getValue());
 			}
-
 			switch (call_type) {
 				case "GET": {
-					response = reqSpec.get(call_string);
-					logger.info("GET URL:" + call_string);
+					response = reqSpec.get(call_url);
+					LOG.info("GET URL:" + call_url);
 					break;
 				}
 				case "POST": {
 					String session_token = getSessionToken(reqSpec);
+					String user_id = getUserId(reqSpec);
+					body = body.replace("default_user_id", user_id);
 					body = body.replace("templet_session_token", session_token);
-					response = reqSpec.body(body).post(call_string);
-					logger.info("POST URL:" + call_string + "   RequestBody:" + body);
+					response = reqSpec.body(body).post(call_url);
+					LOG.info("POST URL:" + call_url + "   RequestBody:" + body);
 					break;
 				}
 				default: {
-					logger.error("Unknown call type: [" + call_type + "]");
+					LOG.error("Unknown call type: [" + call_type + "]");
 				}
 			}
-
 		} catch (Exception e) {
-			logger.error("Problem performing request: ", e);
+			LOG.error("Problem performing request: ", e);
 		}
 		return response;
 	}
@@ -171,12 +167,23 @@ public class GetRequest {
 		Response initRes = reqSpec.body(signinBody).post(signinUrl);
 		try {
 			JSONObject dataJson = new JSONObject(initRes.getBody().asString());
-			JSONObject result = dataJson.getJSONObject("result");
-			session_token = result.getString("session_token");
+			session_token = dataJson.getJSONObject("result").getString("session_token");
 		} catch (JSONException e) {
 			e.printStackTrace();
-			logger.info("init signin error");
+			LOG.info("init signin error");
 		}
 		return session_token;
+	}
+	public String getUserId(RequestSpecification reqSpec){
+		String user_id = null;
+		Response initRes = reqSpec.body(signinBody).post(signinUrl);
+		try {
+			JSONObject dataJson = new JSONObject(initRes.getBody().asString());
+			user_id = dataJson.getJSONObject("result").getString("user_id");
+		} catch (JSONException e) {
+			e.printStackTrace();
+			LOG.info("get user id error");
+		}
+		return user_id;
 	}
 }

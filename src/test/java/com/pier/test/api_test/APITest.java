@@ -14,7 +14,6 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.regex.Pattern;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.log4j.Logger;
@@ -34,7 +33,7 @@ import org.testng.annotations.Test;
 import com.jayway.restassured.response.Response;
 
 public class APITest implements ITest {
-	private static Logger logger = Logger.getLogger(APITest.class);
+	private static Logger LOG = Logger.getLogger(APITest.class);
     private Response response;
     private DataReader myInputData;
     private String template;
@@ -44,7 +43,6 @@ public class APITest implements ITest {
     }
     
     String filePath = "";
-  
     XSSFWorkbook wb = null;
     XSSFSheet inputSheet = null;
  
@@ -68,19 +66,13 @@ public class APITest implements ITest {
         } catch (Exception e) {
             Assert.fail("Problem fetching data from input file:" + e.getMessage());
         }
-        
     }
 
     @DataProvider(name = "WorkBookData")
     protected Iterator<Object[]> testProvider(ITestContext context) {
-
     		List<Object[]> test_IDs = new ArrayList<Object[]>();
-
-            myInputData = new DataReader(inputSheet, true, true, 0);
-
-            // sort map in order so that test cases ran in a fixed order
-            Map<String, RecordHandler> sortmap = new TreeMap<String,RecordHandler>(new Comparator<String>(){
-
+         myInputData = new DataReader(inputSheet, true, true, 0);
+         Map<String, RecordHandler> sortmap = new TreeMap<String,RecordHandler>(new Comparator<String>(){
 				public int compare(String key1, String key2) {
 					return key1.compareTo(key2);
 				}
@@ -101,36 +93,53 @@ public class APITest implements ITest {
 
         GetRequest myReq = new GetRequest();
         int code = 0;
+        String jsonResult = "";
         try {
             myReq.generate_request(template, myInputData.get_record(ID));
             response = myReq.perform_request();
-			   logger.info("ResponseBody:" + response.asString() + "\n" + "statusLine:" + response.getStatusLine());
-            
-            JSONObject dataJson = new JSONObject(response.getBody().asString());
+            jsonResult = response.asString();
+			   LOG.info("ResponseBody:" + jsonResult);
+            JSONObject dataJson = new JSONObject(jsonResult);
        	 	code = dataJson.getInt("code");
-       	 	
+       	 	LOG.info("状态码 : "+code);
         } catch (Exception e) {
         		e.printStackTrace();
           }
-        	String pattern = myInputData.get_record(ID).get("Pattern");
+        	String pattern = myInputData.get_record(ID).get("Templet");
         if (code == 200){
-        		Pattern r = Pattern.compile(pattern);
-        		if(r.matcher(response.asString()).find()){
-        			logger.info("API正常返回数据！"+"\n"+ID+"\t\t" + test_case);
+        		if(checkResult(jsonResult, pattern)){
+        			LOG.info("API正常返回数据！"+"\n"+ID+"\t\t" + test_case);
         		}else {
-        			logger.info("请求未正常返回数据！"+"\n"+ID+"\t\t" + test_case);
+        			LOG.info("请求未正常返回数据，请检查！！！"+"\n"+ID+"\t\t" + test_case);
         			Assert.fail();
-        		}
+				}
         }else{
         		try {
-					logger.info((new JSONObject(response.getBody().asString())).getString("message")+"\n"+ID+"\t\t" + test_case );
+					LOG.info(new JSONObject(jsonResult).getString("message")+"\n"+ID+"\t\t" + test_case );
 				} catch (JSONException e) {
 					e.printStackTrace();
 				}
         }
-       
     }
-
+	
+	public boolean checkResult(String jsonResult,String pattern){
+		String [] result = new String[20];
+		boolean flag = true;
+		if(pattern.contains(","))
+			result = pattern.split(",");
+		else 
+			result[0] = pattern;
+		for(int a = 0;a<result.length;a++){
+			if(jsonResult.contains(result[a])){
+				flag = true;
+			}else{
+				flag = false;
+				break;
+			}
+		}
+		return flag;
+	}
+	
     @AfterTest
     public void teardown() {
         try {

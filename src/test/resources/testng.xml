@@ -3,12 +3,12 @@
 <suite name="GetReqTestSuite" parallel="false" verbose="1" >
   
  
-  <test name="GetReqTest">
+  <test name="APITest">
      <parameter name="workBook" value="/home/pier/workspace/pier_api_test/src/test/resources/Http_Request_workbook_Data.xlsx" />
     <classes>
-      <class name="com.pier.test.api_test.GetReqTest"/>
+      <class name="com.pier.test.api_test.APITest"/>
     </classes>
   </test>
   
   
-  </suite>
+</suite>
